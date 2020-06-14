@@ -6,85 +6,97 @@ class AuthSys {
             $this -> PDO = $PDOconn;
         }
 
-        public function registraNuovoUtente($post){
+        public function usernameExists ($in_uname) {
+            // controllo se nel database è già presente l'username
+            $q = "SELECT * FROM Utenti WHERE username = :uname";
+            $rq = $this -> PDO -> prepare($q);
+            $rq -> bindParam(":uname", $in_uname, PDO::PARAM_STR);
+            $rq -> execute();   
+            if ($rq -> rowCount() > 0) {
+                return true;   
+            }
+            return false;    
+        }
 
-            // rimozione spazi 
-            $in_uname = trim($post['uname']);
-            $in_pwd = trim($post['pwd']);
-            $in_repwd = trim($post['re_pwd']);
-            $in_nome = trim($post['nome']);
-            $in_email = trim($post['email']);
+        public function checkMod ($post) {
             // controllo se l'username contiene solo caratteri alfa-numerici e che sia compreso fra 8 e 12 caratteri
-            if (!ctype_alnum($in_uname) && mb_strlen($in_uname) >= 8 && mb_strlen($in_uname) <= 12) {
+            if (!ctype_alnum($post['uname']) && mb_strlen($post['uname']) >= 8 && mb_strlen($post['uname']) <= 12) {
                 throw new Exception("Username non valida");  
             }
-
-            try {
-                // controllo se nel database è già presente l'username
-                $q = "SELECT * FROM Utenti WHERE username = :uname";
-                $rq = $this -> PDO -> prepare($q);
-                $rq -> bindParam(":uname", $in_uname, PDO::PARAM_STR);
-                $rq -> execute();  
-                if ($rq -> rowCount() > 0) {
-                    throw new Exception("Username già presente");   
-                }   
-            } catch (PDOException $e) {
-                echo $e -> getMessage();
-            }
             // controllo se la password contenga almeno una lettera
-            if (!preg_match('/[a-z]/', $in_pwd)) {
+            if (!preg_match('/[a-z]/', $post['pwd'])) {
                 throw new Exception("La password deve contenere almeno una lettera");
             }
             // controllo se la password contenga almeno un alettera maiuscola
-            if (!preg_match('/[A-Z]/', $in_pwd)) {
+            if (!preg_match('/[A-Z]/', $post['pwd'])) {
                 throw new Exception("La password deve contenere almeno una lettera maiuscola");
             }
             // controllo se la password contenga almeno un numero
-            if (!preg_match('/[0-9]/', $in_pwd)) {
+            if (!preg_match('/[0-9]/', $post['pwd'])) {
                 throw new Exception("La password deve contenere almeno un numero");
             }
             // controllo che la password contenga almeno un carattere speciale
-            if (!preg_match('/[_\-\$@#!\?]/', $in_pwd)) {
+            if (!preg_match('/[_\-\$@#!\?]/', $post['pwd'])) {
                 throw new Exception("La password deve contenere almeno un carattere speciale");
             }
             // controllo che la password sia lunga almeno 8 caratteri
-            if (!mb_strlen($in_pwd) >= 8) {
+            if (!mb_strlen($post['pwd']) >= 8) {
                 throw new Exception("La password deve essere lunga almeno 8 caratteri");
             }
             // controllo che la conferma password sia uguale alla password
-            if (strcmp($in_pwd, $in_repwd) !== 0) {
+            if (strcmp($post['pwd'], $post['re_pwd']) !== 0) {
                 throw new Exception("La conferma non corrisponde alla password");
             }
             // controllo email
-            if (!filter_var($in_email, FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
                 throw new Exception("Email non valida");             
             }
             // controllo nome
-            if (!filter_var($in_nome, FILTER_SANITIZE_STRING) ) {
+            if (!filter_var($post['nome'], FILTER_SANITIZE_STRING) ) {
                 throw new Exception("Nome non valido");
             }
-            if (!mb_strlen($in_nome) > 0) {
+            if (!mb_strlen($post['nome']) > 0) {
                 throw new Exception("Nome non indicato");
             }
+        }
 
-            // creazione password criptata
-            $pwd_hash = password_hash($in_pwd, PASSWORD_DEFAULT);
-
-            // superati tutti i controlli realizzazione query per aggiungere l'utente al DB
-            try {      
-                $q = "INSERT INTO Utenti (username, password, nome, email) VALUES (:uname, :pwd, :nome, :email)";
+        public function addUser($post, $pwd_hash) {
+            $q = "INSERT INTO Utenti (username, password, nome, email) VALUES (:uname, :pwd, :nome, :email)";
                 $rq = $this -> PDO -> prepare($q);
-                $rq -> bindParam(":uname", $in_uname, PDO::PARAM_STR);
+                $rq -> bindParam(":uname", $post['uname'], PDO::PARAM_STR);
                 $rq -> bindParam(":pwd", $pwd_hash, PDO::PARAM_STR);
-                $rq -> bindParam(":nome", $in_nome, PDO::PARAM_STR);
-                $rq -> bindParam(":email", $in_email, PDO::PARAM_STR);
+                $rq -> bindParam(":nome", $post['nome'], PDO::PARAM_STR);
+                $rq -> bindParam(":email", $post['email'], PDO::PARAM_STR);
                 $rq -> execute();
-            } catch (PDOException $e) {
-                echo "Errore nell'inserimento";
+        }
+
+        public function registraNuovoUtente($post){
+            // rimozione spazi
+            foreach ($post as $key => $value) {
+                $post[$key] = trim($value);
             }
 
-            return true;
+            try {
+                if($this -> usernameExists($post['uname'])){
+                    return "L'username indicata è già presente";
+                }
+                $this -> checkMod($post);
+                // creazione password criptata
+                $pwd_hash = password_hash($post['pwd'], PASSWORD_DEFAULT);
+                // superati tutti i controlli realizzazione query per aggiungere l'utente al DB  
+                $this -> addUser($post, $pwd_hash);
+            } 
+            catch (PDOException $e) {
+                return "Errore. Riprova più tardi";
+            }
+            catch (Exception $e) {
+                return $e -> getMessage();
+            }
+  
+            return 'Sei stato correttamente registrato';
         }
+        
+
         public function login($username, $password){
             try {
                 // controllo che l'username sia presente nel database

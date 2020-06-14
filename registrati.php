@@ -1,12 +1,8 @@
 <?php 
     require __DIR__ . "/include/default.php";
-    
+    $ris = "";
     if ($_POST) {
-        try {
-            $auth -> registraNuovoUtente($_POST);
-        } catch (Exception $e) {
-           echo $e -> getMessage();
-        }
+        $ris = $auth -> registraNuovoUtente($_POST);      
     }
     
 ?>
@@ -25,6 +21,8 @@
     <a type="button" class ="btn btn-info" href="registrati.php">Registrati</a>
     <a type="button" class ="btn btn-info" href="login.php">Login</a>
     <hr>
+
+    <?php echo $ris; ?>
 
     <form action="<?php  $_SERVER['PHP_SELF'] ?>" method="post">
         <div class="form-group">
