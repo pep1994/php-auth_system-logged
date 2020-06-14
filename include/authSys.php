@@ -116,9 +116,35 @@ class AuthSys {
             }
         }
 
-        public function logout(){}
+        public function logout(){
+            try {
+                $q = "DELETE FROM UtentiLoggati WHERE session_id = :sessionid";
+                $rq = $this -> PDO -> prepare($q);
+                $session_id = session_id();
+                $rq -> bindParam(":sessionid", $session_id, PDO::PARAM_STR);
+                $rq -> execute();
+            } catch (PDOException $e) {
+                echo "Errore logout!";
+            }
+            return true;
+        }
 
-        public function utenteLoggato(){}
+        public function utenteLoggato(){
+            try {
+                $q = "SELECT * FROM UtentiLoggati WHERE session_id = :sessionid";
+                $rq = $this -> PDO -> prepare($q);
+                $session_id = session_id();
+                $rq -> bindParam(":sessionid", $session_id, PDO::PARAM_STR);
+                $rq -> execute();
+                if ($rq -> rowCount() == 0) {
+                    return false;
+                } else {
+                    return true;
+                }     
+            } catch (PDOException $e) {
+               echo "Errore";
+            }
+        }
 
     }
 ?>

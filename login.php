@@ -5,6 +5,7 @@
             // se il login è andato a buon fine (restituisce true), reindirizzo l'utente al suo profilo
            if ($auth -> login($_POST['username'], $_POST['password'])) {
               header("Location: profilo.php");
+              die();
            } 
         } catch (Exception $e) {
             echo $e -> getMessage();

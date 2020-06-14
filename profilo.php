@@ -1,5 +1,10 @@
 <?php 
     require __DIR__ . "/include/default.php";
+    // la pagina profilo deve essere protetta perciò controllo che l'utente sia loggato
+    if (!$auth -> utenteLoggato()) {
+        header("Location: index.php");
+        die();
+    }
 ?>
 
 <!DOCTYPE html>
@@ -12,6 +17,8 @@
     <link rel="stylesheet" href="include/css/style.css">
 </head>
 <body>
+
+    <a type="button" class ="btn btn-info" href="index.php">Home</a>
     <a type="button" class ="btn btn-info" href="registrati.php">Registrati</a>
     <a type="button" class ="btn btn-info" href="login.php">Login</a>
     <hr>
