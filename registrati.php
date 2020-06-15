@@ -1,7 +1,7 @@
 <?php 
     require __DIR__ . "/include/default.php";
     $ris = "";
-    if ($_POST) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST) {
         $ris = $auth -> registraNuovoUtente($_POST);      
     }
     

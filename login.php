@@ -1,6 +1,6 @@
 <?php 
     require __DIR__ . "/include/default.php";
-    if ($_POST) {
+    if ($_SERVER['REQUEST_METHOD'] && $_POST) {
         try {
             // se il login è andato a buon fine (restituisce true), reindirizzo l'utente al suo profilo
            if ($auth -> login($_POST['username'], $_POST['password'])) {
@@ -28,7 +28,7 @@
     <a type="button" class ="btn btn-info" href="login.php">Login</a>
     <hr>
 
-    <form action="<?php $_SERVER['PHP_SELF'] ?>" method="post">
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
         <div class="form-group">
             <input type="text" name="username" placeholder="Inserisci Username">
         </div>

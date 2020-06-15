@@ -1,9 +1,12 @@
 <?php 
 
-class AuthSys {
+    require_once __DIR__ .  "/authSysSecure.php";
+
+    class AuthSys extends Secure\AuthSysSecure {
         private $PDO;
+
         public function __construct($PDOconn){
-            $this -> PDO = $PDOconn;
+            $this -> PDO = $PDOconn;    
         }
 
         public function usernameExists ($in_uname) {
@@ -52,28 +55,28 @@ class AuthSys {
                 throw new Exception("Email non valida");             
             }
             // controllo nome
-            if (!filter_var($post['nome'], FILTER_SANITIZE_STRING) ) {
-                throw new Exception("Nome non valido");
-            }
             if (!mb_strlen($post['nome']) > 0) {
                 throw new Exception("Nome non indicato");
             }
         }
 
-        public function addUser($post, $pwd_hash) {
-            $q = "INSERT INTO Utenti (username, password, nome, email) VALUES (:uname, :pwd, :nome, :email)";
+        public function addUser($post, $pwd_hash, $token) {
+            $q = "INSERT INTO Utenti (username, password, nome, email, token) VALUES (:uname, :pwd, :nome, :email, :token)";
                 $rq = $this -> PDO -> prepare($q);
                 $rq -> bindParam(":uname", $post['uname'], PDO::PARAM_STR);
                 $rq -> bindParam(":pwd", $pwd_hash, PDO::PARAM_STR);
                 $rq -> bindParam(":nome", $post['nome'], PDO::PARAM_STR);
                 $rq -> bindParam(":email", $post['email'], PDO::PARAM_STR);
+                $rq -> bindParam(":token", $token, PDO::PARAM_STR);
                 $rq -> execute();
+                return $this -> PDO -> lastInsertId();
         }
 
         public function registraNuovoUtente($post){
-            // rimozione spazi
+            
+            // rimozione spazi e sanificazione valori input
             foreach ($post as $key => $value) {
-                $post[$key] = trim($value);
+                $post[$key] = trim($this -> cleanInput($value, 'str'));
             }
 
             try {
@@ -84,7 +87,8 @@ class AuthSys {
                 // creazione password criptata
                 $pwd_hash = password_hash($post['pwd'], PASSWORD_DEFAULT);
                 // superati tutti i controlli realizzazione query per aggiungere l'utente al DB  
-                $this -> addUser($post, $pwd_hash);
+                $token = bin2hex(random_bytes(32));
+                $this -> addUser($post, $pwd_hash, $token);
             } 
             catch (PDOException $e) {
                 return "Errore. Riprova più tardi";
@@ -95,9 +99,10 @@ class AuthSys {
   
             return 'Sei stato correttamente registrato';
         }
-        
 
         public function login($username, $password){
+            $username = $this -> cleanInput($username, 'str');
+            $password = $this -> cleanInput($password, 'str');
             try {
                 // controllo che l'username sia presente nel database
                 $q = "SELECT * FROM Utenti WHERE username = :username";
@@ -124,7 +129,7 @@ class AuthSys {
                 return true;
 
             } catch (PDOException $e) {
-                echo $e -> getMessage();
+                echo  "errore";
             }
         }
 
@@ -155,6 +160,33 @@ class AuthSys {
                 }     
             } catch (PDOException $e) {
                echo "Errore";
+            }
+        }
+
+        public function cancellaUtente() {
+            try {
+                $session_id = session_id();
+                $q = "SELECT * FROM UtentiLoggati WHERE session_id = :sessionid";
+                $rq = $this -> PDO -> prepare($q);
+                $rq -> bindParam(":sessionid", $session_id, PDO::PARAM_STR);
+                $rq -> execute();   
+                if ($rq -> rowCount() !== 1) {
+                    throw new Exception("Errore, impossibile eliminare l'account");              
+                } 
+                $row = $rq -> fetch(PDO::FETCH_ASSOC);
+                $id = $row['user_id'];
+                $q = "DELETE FROM UtentiLoggati WHERE session_id = :sessionid";
+                $rq = $this -> PDO -> prepare($q);
+                $rq -> bindParam(":sessionid", $session_id, PDO::PARAM_STR);
+                $rq -> execute();
+                $q = "DELETE FROM Utenti WHERE id = :id";
+                $rq = $this -> PDO -> prepare($q);
+                $rq -> bindParam(":id", $id, PDO::PARAM_INT);
+                $rq -> execute();
+                return true;
+
+            } catch(PDOException $e) {
+                echo "Errore";
             }
         }
 

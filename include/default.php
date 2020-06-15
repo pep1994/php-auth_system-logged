@@ -6,6 +6,6 @@ error_reporting(E_ALL);
     require __DIR__ . "/authSys.php";
     $auth = new AuthSys($PDOconn);
     if ($auth -> utenteLoggato()) {
-        echo "sei loggato <br> <a href='logout.php'>Logout</a>";
+        echo "sei loggato <br> <a type='button' class='btn btn-danger' href='logout.php'>Logout</a>";
     }
 ?>
