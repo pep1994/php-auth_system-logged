@@ -24,7 +24,7 @@
 
     <?php echo $ris; ?>
 
-    <form action="<?php  $_SERVER['PHP_SELF'] ?>" method="post">
+    <form action="<?php  echo $_SERVER['PHP_SELF']; ?>" method="post">
         <div class="form-group">
             <input type="text" name="uname" class="form-control" placeholder="Username">
         </div>

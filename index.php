@@ -13,8 +13,13 @@
     <link rel="stylesheet" href="include/css/style.css">
 </head>
 <body>
-    <a type="button" class ="btn btn-info" href="registrati.php">Registrati</a>
-    <a type="button" class ="btn btn-info" href="login.php">Login</a>
+    <?php 
+        if ($auth -> utenteLoggato()) {
+            echo '<a type="button" class ="btn btn-info" href="profilo.php">Profilo</a>';
+        } else {
+            echo '<a type="button" class ="btn btn-info" href="registrati.php">Registrati</a>' . ' <a type="button" class ="btn btn-info" href="login.php">Login</a>';
+        }
+    ?>
     <hr>
 </body>
 </html>
